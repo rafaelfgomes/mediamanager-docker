@@ -1,0 +1,52 @@
+services:
+  mediamanager:
+    image: quay.io/maxdorninger/mediamanager
+    container_name: mediamanager-app
+    environment:
+      - CONFIG_DIR=/app/config
+      - MEDIAMANAGER_DATABASE__HOST=database
+      - MEDIAMANAGER_DATABASE__PORT=5432
+      - MEDIAMANAGER_DATABASE__USER=${POSTGRES_USER}
+      - MEDIAMANAGER_DATABASE__PASSWORD=${POSTGRES_PASSWORD}
+      - MEDIAMANAGER_DATABASE__DBNAME=${POSTGRES_DB}
+    restart: unless-stopped
+    volumes:
+      # Mount your actual media directories here - these paths should match your config.toml
+      - ./data/:/data/  # Example: change ./data/ to your actual media root
+      - ${MEDIAMANAGER_CONFIG_FOLDER:-./config}:/app/config
+      - ${MEDIAMANAGER_IMAGES_FOLDER:-./images}:/data/images
+      - ${MEDIAMANAGER_ANIMES_FOLDER:-./animes}:/data/animes
+      - ${MEDIAMANAGER_MOVIES_FOLDER:-./movies}:/data/movies
+      - ${MEDIAMANAGER_TVSHOWS_FOLDER:-./tvshows}:/data/tvshows
+    depends_on:
+      ddatabaseb:
+        condition: service_healthy
+    networks:
+      local:
+      external:
+        ipv4_address: ${MEDIAMANAGER_IP}
+
+  database:
+    container_name: mediamanager-db
+    image: postgres:17
+    restart: unless-stopped
+    volumes:
+      - ${MEDIAMANAGER_DBDATA_FOLDER:-./dbdata}:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      local:
+
+networks:
+  local:
+    name: mediamanager-local-network
+  external:
+    external: true
+    name: ${EXTERNAL_NETWORK_NAME}
