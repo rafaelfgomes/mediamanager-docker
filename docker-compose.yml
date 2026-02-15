@@ -19,7 +19,7 @@ services:
       - ${MEDIAMANAGER_MOVIES_FOLDER:-./movies}:/data/movies
       - ${MEDIAMANAGER_TVSHOWS_FOLDER:-./tvshows}:/data/tvshows
     depends_on:
-      ddatabaseb:
+      database:
         condition: service_healthy
     networks:
       local:
